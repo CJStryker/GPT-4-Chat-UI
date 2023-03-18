@@ -20,5 +20,5 @@ export default async function(req, res) {
 
   });
   res.status(200).json({ result: Chat.data.choices[0].message });
-  res.end();
+  res
 }
