@@ -14,8 +14,8 @@ body {
 }
 
 body {
-  color: snow;
-  background: #070809;
+  color: lime;
+  background: #000000;
 }
 
 a {
@@ -24,5 +24,5 @@ a {
 }
 
 a:hover {
-  opacity: 0.8;
+  opacity: 1.0;
 }

@@ -1,5 +1,5 @@
 {
-  "name": "langchain-chat",
+  "name": "gpt4-ui",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,8 @@
     "@mui/material": "^5.11.4",
     "@next/font": "13.1.1",
     "next": "13.1.1",
-    "openai": "^3.1.0",
+    "npm": "^9.6.2",
+    "openai": "^3.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-markdown": "^8.0.4"

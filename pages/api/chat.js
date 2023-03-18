@@ -1,18 +1,24 @@
-export default async function (req, res) {
+import { Configuration, OpenAIApi } from "openai";
 
-  const response = await fetch(process.env.LCC_ENDPOINT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Api-Key": process.env.LCC_TOKEN
-    },
-    body: JSON.stringify({
-      question: req.body.question,
-      history: req.body.history
-    }),
+const api_key = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const openai = new OpenAIApi(api_key);
+
+export default async function(req, res) {
+  if (!req.body || !req.body.messages) {
+    const errorResponse = {
+      error: 'Bad Request: messages field is required'
+    };
+    res.status(400).json(errorResponse); 
+    return;
+}
+  const Chat = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0301",
+    messages: [{ "role": "system","content": "You are a helpful assistant."}].concat(req.body.messages)
+
   });
-
-    const data = await response.json();
-
-    res.status(200).json({ result: data })
+  res.status(200).json({ result: Chat.data.choices[0].message });
+  res.end();
 }
