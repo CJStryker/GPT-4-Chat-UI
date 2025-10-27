@@ -167,9 +167,7 @@ export default async function handler(req, res) {
   } catch (error) {
     if (res.headersSent) {
       if (useSSE) {
-        res.write(
-          `event: error\ndata: ${JSON.stringify(error.message)}\n\n`
-        );
+        res.write(`event: error\ndata: ${JSON.stringify(error.message)}\n\n`);
       }
       try {
         res.end();
