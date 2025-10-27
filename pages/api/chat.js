@@ -16,23 +16,23 @@ export default async function handler(req, res) {
   const payload = {
     model: OLLAMA_MODEL,
     messages: req.body.messages,
-    stream: false
+    stream: false,
   };
 
   try {
     const response = await fetch(OLLAMA_ENDPOINT, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       res.status(response.status).json({
         error: "Ollama request failed",
-        details: errorText
+        details: errorText,
       });
       return;
     }
@@ -47,6 +47,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({ result: resultMessage });
   } catch (error) {
-    res.status(500).json({ error: "Failed to contact Ollama", details: error.message });
-  }
-}
+    res.status(500).json({
+      error: "Failed to contact Ollama",
+      details: e
