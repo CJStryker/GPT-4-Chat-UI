@@ -53,12 +53,14 @@ export default function Home() {
   // Auto scroll chat to bottom
   useEffect(() => {
     const messageList = messageListRef.current;
-    messageList.scrollTop = messageList.scrollHeight;
+    if (messageList) {
+      messageList.scrollTop = messageList.scrollHeight;
+    }
   }, [messages]);
 
   // Focus on text field on load
   useEffect(() => {
-    textAreaRef.current.focus();
+    textAreaRef.current?.focus?.();
   }, []);
 
   useEffect(() => {

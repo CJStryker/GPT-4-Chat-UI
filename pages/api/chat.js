@@ -129,9 +129,13 @@ export default async function handler(req, res) {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
     }
+    if (typeof res.flushHeaders === "function") {
+      res.flushHeaders();
+    }
 
     const reader = bodyStream.getReader();
     const decoder = new TextDecoder();
+    let pendingSSELine = "";
 
     while (true) {
       const { value, done } = await reader.read();
@@ -140,13 +144,20 @@ export default async function handler(req, res) {
       const textChunk = decoder.decode(value, { stream: true });
 
       if (useSSE) {
-        for (const rawLine of textChunk.split(/\r?\n/)) {
+        const lines = (pendingSSELine + textChunk).split(/\r?\n/);
+        pendingSSELine = lines.pop() ?? "";
+        for (const rawLine of lines) {
           if (!rawLine) continue;
           res.write(`data: ${rawLine}\n\n`);
         }
       } else {
         res.write(textChunk);
       }
+    }
+
+    if (useSSE && pendingSSELine) {
+      res.write(`data: ${pendingSSELine}\n\n`);
+      pendingSSELine = "";
     }
 
     if (useSSE) {
