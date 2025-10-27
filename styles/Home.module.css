@@ -59,6 +59,32 @@
   position: relative;
 }
 
+.modeswitcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #ececf1;
+}
+
+.modeswitcher label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.modeselect {
+  background: #070809;
+  color: #ececf1;
+  border: 1px solid #30373d;
+  border-radius: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.modeselect:disabled {
+  opacity: 0.6;
+}
+
 .textarea {
   position: relative;
   resize: none;

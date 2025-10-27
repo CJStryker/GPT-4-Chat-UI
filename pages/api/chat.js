@@ -2,6 +2,45 @@
 const OLLAMA_ENDPOINT = "http://69.142.141.135:11434/api/chat";
 const OLLAMA_MODEL = "gpt-oss:120b";
 
+const toMessageArray = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  const { question, history } = payload ?? {};
+  if (!question) {
+    return null;
+  }
+
+  const normalizedHistory = Array.isArray(history) ? history : [];
+  const messages = [];
+
+  for (const pair of normalizedHistory) {
+    if (!Array.isArray(pair) || pair.length < 2) continue;
+    const [user, assistant] = pair;
+    if (typeof user === "string") {
+      messages.push({ role: "user", content: user });
+    }
+    if (typeof assistant === "string") {
+      messages.push({ role: "assistant", content: assistant });
+    }
+  }
+
+  messages.push({ role: "user", content: question });
+  return messages;
+};
+
+const sameOriginError = (upstream, errText) => {
+  const status = upstream?.status ?? 502;
+  return {
+    status,
+    body: {
+      error: "Ollama request failed",
+      details: errText || "No body returned",
+    },
+  };
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
@@ -9,83 +48,31 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!req.body || !req.body.messages) {
-    res.status(400).json({ error: "Bad Request: messages field is required" });
+  const { body = {} } = req;
+  const incomingMessages = body.messages;
+  const conversation = toMessageArray(
+    Array.isArray(incomingMessages) ? incomingMessages : body
+  );
+
+  if (!Array.isArray(conversation) || conversation.length === 0) {
+    res
+      .status(400)
+      .json({ error: "Bad Request: messages or question field is required" });
     return;
   }
 
-  // Modes:
-  //  - ?sse=1       => SSE streaming (EventSource)
-  //  - ?stream=0    => non-stream JSON (one-shot)
-  //  - default      => NDJSON streaming passthrough (fetch reader)
-  const useSSE = req.query.sse === "1";
-  const forceJSON = req.query.stream === "0";
+  const requestedMode = req.query.mode;
+  const useSSE = req.query.sse === "1" || requestedMode === "sse";
+  const streamDisabled = requestedMode === "json" || requestedMode === "rest";
 
-  // ---------- Non-stream JSON mode ----------
-  if (forceJSON) {
-    const payload = {
-      model: OLLAMA_MODEL,
-      messages: req.body.messages,
-      stream: false,
-    };
-
-    try {
-      const response = await fetch(OLLAMA_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        res.status(response.status).json({
-          error: "Ollama request failed",
-          details: errorText,
-        });
-        return;
-      }
-
-      const data = await response.json();
-      const resultMessage = data?.message ?? data?.result ?? null;
-
-      if (!resultMessage || !resultMessage.content) {
-        res.status(502).json({ error: "Invalid response from Ollama" });
-        return;
-      }
-
-      res.status(200).json({ result: resultMessage });
-      return;
-    } catch (error) {
-      res.status(500).json({
-        error: "Failed to contact Ollama",
-        details: error.message,
-      });
-      return;
-    }
-  }
-
-  // ---------- Streaming modes (SSE or NDJSON) ----------
   const payload = {
     model: OLLAMA_MODEL,
-    messages: req.body.messages,
-    stream: true,
+    messages: conversation,
+    stream: !streamDisabled,
   };
-
-  if (useSSE) {
-    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
-    res.setHeader("Connection", "keep-alive");
-  } else {
-    // NDJSON passthrough
-    res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-  }
 
   const controller = new AbortController();
   const { signal } = controller;
-
-  // Abort upstream when client disconnects
   req.on("close", () => controller.abort());
 
   try {
@@ -96,17 +83,59 @@ export default async function handler(req, res) {
       signal,
     });
 
-    if (!upstream.ok || !upstream.body) {
+    if (!upstream.ok) {
       const errText = await upstream.text().catch(() => "");
-      res
-        .status(upstream.status || 502)
-        .end(JSON.stringify({ error: "Ollama request failed", details: errText || "No body returned" }));
+      const problem = sameOriginError(upstream, errText);
+      res.status(problem.status).json(problem.body);
       return;
     }
 
-    const reader = upstream.body.getReader();
-    const encoder = new TextEncoder();
+    if (streamDisabled) {
+      const text = await upstream.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (error) {
+        res
+          .status(502)
+          .json({ error: "Invalid JSON from Ollama", details: text });
+        return;
+      }
+
+      const messageContent =
+        data?.message?.content ??
+        data?.response ??
+        data?.result ??
+        data?.output ??
+        "";
+
+      res.status(200).json({ result: messageContent, raw: data });
+      return;
+    }
+
+    const bodyStream = upstream.body;
+    if (!bodyStream) {
+      const problem = sameOriginError(upstream, "");
+      res.status(problem.status).json(problem.body);
+      return;
+    }
+
+    if (useSSE) {
+      res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.setHeader("Connection", "keep-alive");
+    } else {
+      res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+    }
+    if (typeof res.flushHeaders === "function") {
+      res.flushHeaders();
+    }
+
+    const reader = bodyStream.getReader();
     const decoder = new TextDecoder();
+    let pendingSSELine = "";
 
     while (true) {
       const { value, done } = await reader.read();
@@ -115,15 +144,20 @@ export default async function handler(req, res) {
       const textChunk = decoder.decode(value, { stream: true });
 
       if (useSSE) {
-        // Ollama emits JSON lines; wrap each non-empty line as SSE
-        for (const line of textChunk.split(/\r?\n/)) {
-          if (!line) continue;
-          res.write(`data: ${line}\n\n`);
+        const lines = (pendingSSELine + textChunk).split(/\r?\n/);
+        pendingSSELine = lines.pop() ?? "";
+        for (const rawLine of lines) {
+          if (!rawLine) continue;
+          res.write(`data: ${rawLine}\n\n`);
         }
       } else {
-        // NDJSON passthrough (no transform)
-        res.write(encoder.encode(textChunk));
+        res.write(textChunk);
       }
+    }
+
+    if (useSSE && pendingSSELine) {
+      res.write(`data: ${pendingSSELine}\n\n`);
+      pendingSSELine = "";
     }
 
     if (useSSE) {
@@ -132,10 +166,16 @@ export default async function handler(req, res) {
     res.end();
   } catch (error) {
     if (res.headersSent) {
-      if (useSSE) res.write(`event: error\ndata: ${JSON.stringify(error.message)}\n\n`);
-      try { res.end(); } catch {}
+      if (useSSE) {
+        res.write(`event: error\ndata: ${JSON.stringify(error.message)}\n\n`);
+      }
+      try {
+        res.end();
+      } catch {}
       return;
     }
-    res.status(500).json({ error: "Failed to contact Ollama", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to contact Ollama", details: error.message });
   }
 }
