@@ -14,34 +14,78 @@ export default async function handler(req, res) {
     return;
   }
 
-  // If you’re using EventSource on the client, call /api/chat?sse=1
+  // Modes:
+  //  - ?sse=1       => SSE streaming (EventSource)
+  //  - ?stream=0    => non-stream JSON (one-shot)
+  //  - default      => NDJSON streaming passthrough (fetch reader)
   const useSSE = req.query.sse === "1";
+  const forceJSON = req.query.stream === "0";
 
-  // Build the Ollama payload with streaming enabled
+  // ---------- Non-stream JSON mode ----------
+  if (forceJSON) {
+    const payload = {
+      model: OLLAMA_MODEL,
+      messages: req.body.messages,
+      stream: false,
+    };
+
+    try {
+      const response = await fetch(OLLAMA_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        res.status(response.status).json({
+          error: "Ollama request failed",
+          details: errorText,
+        });
+        return;
+      }
+
+      const data = await response.json();
+      const resultMessage = data?.message ?? data?.result ?? null;
+
+      if (!resultMessage || !resultMessage.content) {
+        res.status(502).json({ error: "Invalid response from Ollama" });
+        return;
+      }
+
+      res.status(200).json({ result: resultMessage });
+      return;
+    } catch (error) {
+      res.status(500).json({
+        error: "Failed to contact Ollama",
+        details: error.message,
+      });
+      return;
+    }
+  }
+
+  // ---------- Streaming modes (SSE or NDJSON) ----------
   const payload = {
     model: OLLAMA_MODEL,
     messages: req.body.messages,
     stream: true,
   };
 
-  // Prepare response headers before opening the upstream stream
   if (useSSE) {
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
   } else {
-    // NDJSON-style passthrough (good for fetch() streaming readers)
+    // NDJSON passthrough
     res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
   }
 
-  // Make sure Node doesn’t buffer
-  // (Next.js API routes are fine with res.write / res.flushHeaders implicitly)
   const controller = new AbortController();
   const { signal } = controller;
 
-  // Abort upstream if client disconnects
+  // Abort upstream when client disconnects
   req.on("close", () => controller.abort());
 
   try {
@@ -54,16 +98,12 @@ export default async function handler(req, res) {
 
     if (!upstream.ok || !upstream.body) {
       const errText = await upstream.text().catch(() => "");
-      res.status(upstream.status || 502).end(
-        JSON.stringify({
-          error: "Ollama request failed",
-          details: errText || "No body returned",
-        })
-      );
+      res
+        .status(upstream.status || 502)
+        .end(JSON.stringify({ error: "Ollama request failed", details: errText || "No body returned" }));
       return;
     }
 
-    // Web ReadableStream -> iterate chunks and forward
     const reader = upstream.body.getReader();
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
@@ -75,25 +115,22 @@ export default async function handler(req, res) {
       const textChunk = decoder.decode(value, { stream: true });
 
       if (useSSE) {
-        // Wrap each line as an SSE event
-        // Ollama emits JSON-per-line; we transform each non-empty line to: data: <line>\n\n
+        // Ollama emits JSON lines; wrap each non-empty line as SSE
         for (const line of textChunk.split(/\r?\n/)) {
           if (!line) continue;
           res.write(`data: ${line}\n\n`);
         }
       } else {
-        // Passthrough NDJSON (no transformation)
+        // NDJSON passthrough (no transform)
         res.write(encoder.encode(textChunk));
       }
     }
 
-    // Finalize stream
     if (useSSE) {
       res.write("event: end\ndata: [DONE]\n\n");
     }
     res.end();
   } catch (error) {
-    // If headers already sent, just terminate the stream
     if (res.headersSent) {
       if (useSSE) res.write(`event: error\ndata: ${JSON.stringify(error.message)}\n\n`);
       try { res.end(); } catch {}
