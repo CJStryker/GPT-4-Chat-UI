@@ -14,8 +14,8 @@ body {
 }
 
 body {
-  color: lime;
-  background: #000000;
+  color: #e6e9ef;
+  background: radial-gradient(circle at top, #1a2230, #0b0f14 45%, #07090d 100%);
 }
 
 a {

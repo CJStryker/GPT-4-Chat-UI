@@ -1,5 +1,5 @@
 // pages/api/chat.js
-const OLLAMA_ENDPOINT = "http://69.142.141.135:11434/api/chat";
+const OLLAMA_ENDPOINT = "http://96.242.172.92:11434/api/chat";
 const OLLAMA_MODEL = "gpt-oss:120b";
 
 const toMessageArray = (payload) => {
