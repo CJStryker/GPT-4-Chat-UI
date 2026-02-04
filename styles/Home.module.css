@@ -1,9 +1,9 @@
 .main {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 2.5rem 1.5rem 3rem;
+  gap: 1.75rem;
 }
 
 .header {
@@ -15,12 +15,16 @@
 }
 
 .topnav {
-  background-color: #000000;
-  border-bottom: 1px solid #00ff00;
+  background-color: rgba(7, 10, 15, 0.8);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0.25rem 0.5rem 0.25rem;
+  padding: 0.75rem 1.25rem;
   align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
 }
 
 .navlogo, .navlinks a {
@@ -28,8 +32,8 @@
 }
 
 .navlogo {
-  font-size: 1.25rem;
-  margin-left: 1rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
 }
 
 .navlinks {
@@ -37,6 +41,26 @@
   display: flex;
   justify-content: space-evenly;
   align-items: center;
+}
+
+.hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #cbd5f5;
+  max-width: 36rem;
 }
 
 .apptitle {
@@ -57,14 +81,25 @@
 
 .cloudform {
   position: relative;
+  width: min(900px, 92vw);
+  background: #0f141b;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem 1.5rem;
+  box-shadow: 0 20px 60px rgba(5, 7, 11, 0.45);
+}
+
+.cloudform form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
 .modeswitcher {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  color: #ececf1;
+  gap: 0.75rem;
+  color: #d0d4dc;
 }
 
 .modeswitcher label {
@@ -73,11 +108,11 @@
 }
 
 .modeselect {
-  background: #070809;
-  color: #ececf1;
-  border: 1px solid #30373d;
-  border-radius: 0.35rem;
-  padding: 0.4rem 0.75rem;
+  background: #0b1118;
+  color: #e6e9ef;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.85rem;
   font-size: 0.9rem;
 }
 
@@ -89,13 +124,15 @@
   position: relative;
   resize: none;
   font-size: 1.1rem;
-  padding: 1rem 2rem 1rem 2rem;
-  width: 75vw;
-  border-radius: 0.5rem;
-  border: 1px solid #30373d;
-  background: #070809;
-  color: #ECECF1;
+  padding: 1rem 3.25rem 1rem 1.25rem;
+  width: 100%;
+  min-height: 3.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0b1118;
+  color: #e6e9ef;
   outline: none;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.6);
 }
 
 .textarea:disabled {
@@ -108,9 +145,9 @@
 
 .generatebutton {
   position: absolute;
-  top: 0.87rem;
-  right: 1rem;
-  color: rgb(165, 162, 162);
+  top: 1.9rem;
+  right: 2rem;
+  color: #cbd5f5;
   background: none;
   padding: 0.3rem;
   border: none;
@@ -119,8 +156,8 @@
 
 .loadingwheel {
   position: absolute;
-  top: 0.2rem;
-  right: 0.25rem;
+  top: 1.2rem;
+  right: 1.15rem;
 }
 
 .svgicon {
@@ -131,8 +168,8 @@
 }
 
 .generatebutton:hover {
-  background: #1f2227;
-  border-radius: 0.2rem;
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 0.5rem;
 }
 
 .generatebutton:disabled {
@@ -144,8 +181,12 @@
 .messagelist {
   width: 100%;
   height: 100%;
-  overflow-y: scroll;
-  border-radius: 0.5rem;
+  overflow-y: auto;
+  border-radius: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
 }
 
 .messagelistloading {
@@ -156,20 +197,31 @@
 }
 
 .usermessage {
-  background: #070809;
-  padding: 1.5rem;
-  color: #ECECF1;
+  background: #1a2230;
+  padding: 1.25rem 1.5rem;
+  color: #e7ebf3;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 12px 30px rgba(8, 11, 17, 0.25);
+  align-self: flex-end;
+  max-width: 80%;
+  flex-direction: row-reverse;
 }
 
 .usermessagewaiting{
-  padding: 1.5rem;
-  color: #ECECF1;
-  background: linear-gradient(to left, #070809, #1a1c20, #070809);
+  padding: 1.25rem 1.5rem;
+  color: #e7ebf3;
+  background: linear-gradient(to left, #111827, #1f2937, #111827);
   background-size: 200% 200%;
   background-position: -100% 0;
   animation: loading-gradient 2s ease-in-out infinite;
   animation-direction: alternate;
   animation-name: loading-gradient;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  align-self: flex-end;
+  max-width: 80%;
+  flex-direction: row-reverse;
 }
 
 @keyframes loading-gradient {
@@ -182,10 +234,15 @@
 }
 
 .apimessage {
-  background: #000000;
-  padding: 1.5rem;
-  color: #00ff00;
+  background: #0d1218;
+  padding: 1.25rem 1.5rem;
+  color: #e6f1ff;
   animation: fadein 0.25s;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 12px 30px rgba(5, 8, 12, 0.3);
+  align-self: flex-start;
+  max-width: 80%;
 }
 
 @keyframes fadein {
@@ -195,10 +252,12 @@
 
 .apimessage, .usermessage, .usermessagewaiting {
   display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
 }
 
 .markdownanswer {
-  line-height: 1.75;
+  line-height: 1.7;
 }
 
 .markdownanswer a:hover {
@@ -206,12 +265,12 @@
 }
 
 .markdownanswer a {
-  color: #ff00ff;
+  color: #8bd0ff;
   font-weight: 600;
 }
 
 .markdownanswer code {
-  color: #15cb19;
+  color: #9ef8b4;
   font-weight: 600;
   white-space: pre-wrap !important;
 }
@@ -221,8 +280,7 @@
 }
 
 .boticon, .usericon {
-  margin-right: 1rem;
-  border-radius: 0.1rem;
+  border-radius: 0.35rem;
 }
 
 .markdownanswer h1, .markdownanswer h2, .markdownanswer h3 {
@@ -235,19 +293,21 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  padding: 2rem 0;
+  padding: 1.5rem 0;
   flex-direction: column;
+  gap: 1.5rem;
 }
 
 .cloud {
-  width: 75vw;
-  height: 65vh;
-  background: #070809;
-  border-radius: 0.5rem;
-  border: 1px solid #30373d;
+  width: min(900px, 92vw);
+  height: 62vh;
+  background: #0f141b;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 24px 70px rgba(7, 10, 15, 0.5);
 }
 
 .pointsnormal {
@@ -262,14 +322,14 @@
 }
 
 .footer {
-  color: #ffff00;
+  color: #9ca3af;
   font-size: 0.8rem;
-  margin: 1.5rem;
+  margin: 1rem 0 0;
 }
 
 .footer a {
   font-weight: 600;
-  color: #7a7d81;
+  color: #cbd5f5;
 }
 
 .footer a:hover {
@@ -280,16 +340,16 @@
 @media (max-width: 600px) {
 
   .main {
-    padding: 1rem;
+    padding: 1.5rem 1rem 2rem;
     max-height: 90vh;
   }
 
   .cloud {
-    width: 22rem;
+    width: 92vw;
     height: 28rem;
   }
   .textarea {
-    width: 22rem;
+    width: 100%;
   }
   .topnav {
     border: 1px solid black;

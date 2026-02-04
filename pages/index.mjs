@@ -4,38 +4,7 @@ import styles from '../styles/Home.module.css'
 import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import CircularProgress from '@mui/material/CircularProgress';
-
-const createMessage = (role, content = '') => ({
-  role,
-  type: role === 'user' ? 'userMessage' : 'apiMessage',
-  content,
-});
-
-const messageRole = (message) => {
-  if (message.role) return message.role;
-  if (message.type === 'userMessage') return 'user';
-  return 'assistant';
-};
-
-const computeHistoryPairs = (conversation) => {
-  const pairs = [];
-  let pendingUser = null;
-
-  for (const entry of conversation) {
-    const role = messageRole(entry);
-    if (role === 'user') {
-      pendingUser = entry.content ?? '';
-    } else if (role === 'assistant' && pendingUser) {
-      const assistantContent = entry.content ?? '';
-      if (assistantContent) {
-        pairs.push([pendingUser, assistantContent]);
-        pendingUser = null;
-      }
-    }
-  }
-
-  return pairs;
-};
+import { createMessage, messageRole, computeHistoryPairs } from '../lib/chatUtils';
 
 export default function Home() {
 
@@ -304,19 +273,25 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>PopPooB</title>
-        <meta name="description" content="GPT-4 interface" />
+        <title>Ollama Studio</title>
+        <meta name="description" content="A polished Ollama chat interface" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className={styles.topnav}>
         <div className={styles.navlogo}>
-          <a href="/">PopPooB</a>
+          <a href="/">Ollama Studio</a>
         </div>
         <div className={styles.navlinks}>
         </div>
       </div>
       <main className={styles.main}>
+        <section className={styles.hero}>
+          <h1 className={styles.title}>Ollama Studio</h1>
+          <p className={styles.subtitle}>
+            A refined, test-backed chat workspace for your local models.
+          </p>
+        </section>
         <div className={styles.cloud}>
           <div ref={messageListRef} className={styles.messagelist}>
             {messages.map((message, index) => {
@@ -395,7 +370,7 @@ export default function Home() {
             </form>
           </div>
           <div className={styles.footer}>
-            <p>Powered by <a href="https://poppoob.com/about" target="_blank">PopPooB</a>.</p>
+            <p>Built for Ollama workflows.</p>
           </div>
         </div>
       </main>
