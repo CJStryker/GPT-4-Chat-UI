@@ -273,25 +273,19 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Ollama Studio</title>
-        <meta name="description" content="A polished Ollama chat interface" />
+        <title>PopPooB</title>
+        <meta name="description" content="GPT-4 interface" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className={styles.topnav}>
         <div className={styles.navlogo}>
-          <a href="/">Ollama Studio</a>
+          <a href="/">PopPooB</a>
         </div>
         <div className={styles.navlinks}>
         </div>
       </div>
       <main className={styles.main}>
-        <section className={styles.hero}>
-          <h1 className={styles.title}>Ollama Studio</h1>
-          <p className={styles.subtitle}>
-            A refined, test-backed chat workspace for your local models.
-          </p>
-        </section>
         <div className={styles.cloud}>
           <div ref={messageListRef} className={styles.messagelist}>
             {messages.map((message, index) => {
@@ -370,7 +364,7 @@ export default function Home() {
             </form>
           </div>
           <div className={styles.footer}>
-            <p>Built for Ollama workflows.</p>
+            <p>Powered by <a href="https://poppoob.com/about" target="_blank">PopPooB</a>.</p>
           </div>
         </div>
       </main>
